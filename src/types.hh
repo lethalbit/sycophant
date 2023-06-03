@@ -22,7 +22,7 @@ namespace sycophant {
 	struct mapentry_t final {
 		std::uintptr_t addr_s;
 		std::uintptr_t addr_e;
-		std::ptrdiff_t size;
+		std::uintptr_t size;
 		std::uint8_t prot;
 		std::size_t offset;
 		/* There is a dev and inode here but we don't care about them */

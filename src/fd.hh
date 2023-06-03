@@ -28,6 +28,7 @@ namespace sycophant {
 
 	using stat_t = struct stat;
 
+	[[maybe_unused]]
 	constexpr static ::mode_t normal_mode = S_IWUSR | S_IRUSR | S_IRGRP | S_IROTH;
 
 	namespace {

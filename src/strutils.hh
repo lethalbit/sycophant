@@ -126,13 +126,13 @@ namespace sycophant {
 			for (std::size_t i{}; i < _len; ++i) {
 				std::uint8_t hex{_val[i]};
 				if (hex >= 'a' && hex <= 'f') {
-					hex -= 0x20U;
+					hex -= std::uint8_t(0x20U);
 				}
 
 				res <<= 4;
-				hex -= 0x30U;
+				hex -= std::uint8_t(0x30U);
 				if (hex > 0x09U) {
-					hex -= 0x07U;
+					hex -= std::uint8_t(0x07U);
 				}
 
 				res += hex;
@@ -236,7 +236,6 @@ namespace sycophant {
 		}
 
 		template<typename T = int_t>
-		[[noinline]]
 		constexpr std::enable_if_t<
 			std::is_same_v<T, int_t> && std::is_integral_v<T> &&
 			!is_boolean_v<T> && std::is_signed_v<T> && _len == npos
@@ -273,7 +272,6 @@ namespace sycophant {
 		}
 
 		template<typename T = int_t>
-		[[noinline]]
 		constexpr std::enable_if_t<
 			std::is_same_v<T, int_t> && std::is_integral_v<T> &&
 			!is_boolean_v<T> && std::is_signed_v<T> && _len != npos
