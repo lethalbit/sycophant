@@ -28,6 +28,7 @@
 
 #include <config.hh>
 #include <types.hh>
+#include <sysutils.hh>
 
 #include <fd.hh>
 #include <mmap.hh>
@@ -41,6 +42,7 @@ namespace sycophant {
 
 	std::map<std::string_view, py::module> imports{};
 	std::map<std::string_view, std::string_view> envmap{};
+	std::vector<mapentry_t> procmaps{};
 
 	[[nodiscard]]
 	std::size_t param_count(py::function& func) {
@@ -79,12 +81,38 @@ PYBIND11_EMBEDDED_MODULE(sycophant, m) {
 		// });
 	});
 
-	m.def("rm_hook", [](std::string_view name){
-		// std::remove_if(std::begin(hooks), std::end(hooks),
-		// 	[name](sycophant_hook_t& hook) -> bool {
-		// 		return hook.name == name;
-		// });
+	m.def("get_maps", [](){
+		return sycophant::procmaps;
 	});
+
+	m.def("refresh_maps", [](){
+		sycophant::build_maps(sycophant::procmaps);
+	});
+
+
+	py::class_<sycophant::mapentry_t>(m, "mapentry")
+		.def_readonly("start",      &sycophant::mapentry_t::addr_s    )
+		.def_readonly("end",        &sycophant::mapentry_t::addr_e    )
+		.def_readonly("size",       &sycophant::mapentry_t::size      )
+		.def_readonly("prot",       &sycophant::mapentry_t::prot      )
+		.def_readonly("offset",     &sycophant::mapentry_t::offset    )
+		.def_readonly("path",       &sycophant::mapentry_t::path      )
+		.def_readonly("is_virtual", &sycophant::mapentry_t::is_virtual)
+		.def_readonly("is_backed",  &sycophant::mapentry_t::is_backed )
+		.def("__repr__", [](const sycophant::mapentry_t& entry) {
+			const auto start{sycophant::fromint_t(entry.addr_s).to_hex()};
+			const auto end{sycophant::fromint_t(entry.addr_s).to_hex()};
+			const auto path{[&](){
+				if (entry.is_backed) {
+					return "\"" + entry.path + "\"";
+				} else {
+					return std::string{};
+				}
+			}()};
+
+			return "<mapentry (" + start + "-" + end + ") " + path + ">";
+		});
+
 }
 
 extern "C" {
@@ -109,6 +137,9 @@ extern "C" {
 				std::memset(env, 0, std::strlen(*env));
 			}
 		}
+
+		// Build out memory map
+		sycophant::build_maps(sycophant::procmaps);
 
 		/* Now that pre-init is over we can spin up the interpreter */
 

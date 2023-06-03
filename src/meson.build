@@ -40,6 +40,7 @@ config_header = configure_file(
 
 sycophant_srcs = files([
 	'sycophant.cc',
+	'sysutils.cc',
 ])
 
 sycophant = shared_module(
