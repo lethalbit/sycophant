@@ -25,7 +25,7 @@ The following table lists the current supported options:
 | `SYCOPHANT_MODULE` | Specify the hook module you want Sycophant to load. | string |
 
 
-### Sycophant Hooks API
+### Sycophant API
 
 The python module imported by Sycophant to install hooks has a fairly simple API exposed via the `sycophant` module in the file itself.
 
