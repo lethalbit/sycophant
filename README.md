@@ -8,6 +8,30 @@
 
 Sycophant is a `LD_PRELOAD` library that loads a python interpreter into the target process and exposes mechanisms to install hooks into arbitrary functions and inspect the running process, all from within the ease of use of python.`
 
+
+## Using Sycophant
+
+Once Sycophant is built, you should have a `sycophant.so` library, by default it will try to import a `sycophant_hooks` module located in the same directory of where the process was invoked.
+
+### Sycophant Options
+
+You can control Sycophants behavior by setting specific environment variables, all of which are prefixed with `SYCOPHANT_` and scrubbed from the environment block before the host process is invoked.
+
+
+The following table lists the current supported options:
+
+|    Setting Name    |                     Description                     | Value  |
+|--------------------|-----------------------------------------------------|--------|
+| `SYCOPHANT_MODULE` | Specify the hook module you want Sycophant to load. | string |
+
+
+### Sycophant Hooks API
+
+The python module imported by Sycophant to install hooks has a fairly simple API exposed via the `sycophant` module in the file itself.
+
+It exposes a fairly simple API to allow you to insert hooks at specific addresses, search for symbols in the host process, and a few other utilities.
+
+
 ## Configuring and Building
 
 The following steps describe how to build Sycophant, it should be consistent for Linux, macOS, and Windows, but macOS and Windows remain untested.

@@ -12,6 +12,8 @@
 #include <algorithm>
 #include <filesystem>
 #include <vector>
+#include <optional>
+#include <functional>
 #include <string_view>
 #include <variant>
 #include <map>
@@ -43,18 +45,14 @@ namespace sycophant {
 		return py::len(res.attr("parameters"));
 	}
 
-	[[nodiscard]]
-	bool hasenv(std::string_view& name) {
-		return (envmap.find(name)!= envmap.end());
-	}
 
 	[[nodiscard]]
-	const std::string_view& getenv(std::string_view& name) {
+	std::optional<std::reference_wrapper<std::string_view>> getenv(std::string_view name) {
 		if (const auto e = envmap.find(name);e != envmap.end()) {
-			return e->second;
+			return std::make_optional(std::ref(e->second));
 		}
 
-		return "";
+		return std::nullopt;
 	}
 
 	[[nodiscard]]
@@ -115,11 +113,22 @@ extern "C" {
 			true, argc, argv, true
 		};
 
+		// Load `inspect` so we can extract information from passed in functions
 		sycophant::imports.insert({"inspect", py::module::import("inspect")});
-		sycophant::imports.insert({"sycophant", py::module::import("hooks")});
+
+		// Load up the hook module if specified, otherwise the default one
+		if (auto mod = sycophant::getenv("SYCOPHANT_MODULE")) {
+			sycophant::imports.insert({"sycophant", py::module::import((mod->get()).data())});
+		} else {
+			sycophant::imports.insert({"sycophant", py::module::import("sycophant_hooks")});
+		}
 
 
 
+
+
+
+		// If we have the original __libc_start_main then call it now that we're all setup
 		if (*sycophant::old_libc_start != nullptr) {
 			ret = (*sycophant::old_libc_start)(main, argc, argv, init, fini, rtld_fini, stack_end);
 		}
