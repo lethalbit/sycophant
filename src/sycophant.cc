@@ -72,25 +72,34 @@ namespace sycophant {
 
 PYBIND11_EMBEDDED_MODULE(sycophant, m) {
 	m.attr("__version__") = sycophant::config::version;
+	m.attr("__doc__") = "Sycophant Python API";
 
-	m.def("hook_addr", [](std::uintptr_t addr, py::function func) {
+	auto proc = m.def_submodule("proc", "interact with the running process");
 
-	});
 
-	m.def("add_hook", [](std::string_view name, py::function func) {
+	auto proc_maps = proc.def_submodule("maps", "process map information");
 
-	});
-
-	m.def("get_maps", [](){
+	proc_maps.def("all", []() {
 		return sycophant::state.procmaps;
 	});
 
-	m.def("refresh_maps", [](){
+	proc_maps.def("get", [](std::size_t idx) -> std::optional<sycophant::mapentry_t> {
+		if (idx > sycophant::state.procmaps.size()) {
+			return std::nullopt;
+		}
+		return std::make_optional(sycophant::state.procmaps[idx]);
+	});
+
+	proc_maps.def("refresh", []() {
 		sycophant::build_maps(sycophant::state.procmaps);
 	});
 
+	proc_maps.def("has_addr", [](std::uintptr_t addr) {
+		return sycophant::addr_mapped(sycophant::state.procmaps, addr);
+	});
 
-	py::class_<sycophant::mapentry_t>(m, "mapentry")
+
+	py::class_<sycophant::mapentry_t>(proc_maps, "mapentry")
 		.def_readonly("start",      &sycophant::mapentry_t::addr_s    )
 		.def_readonly("end",        &sycophant::mapentry_t::addr_e    )
 		.def_readonly("size",       &sycophant::mapentry_t::size      )
