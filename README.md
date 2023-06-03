@@ -11,7 +11,9 @@ Sycophant is a `LD_PRELOAD` library that loads a python interpreter into the tar
 
 ## Using Sycophant
 
-Once Sycophant is built, you should have a `sycophant.so` library, by default it will try to import a `sycophant_hooks` module located in the same directory of where the process was invoked.
+Once Sycophant is built, you should have a `sycophant.so` library, by default it will try to import a `sycophant_hooks` module located in either `~/.config/sycophant` or in the current working directory.
+
+If `~/.config/sycophant` exists, it will automatically be inserted into the front of the `sys.path` allow for various modules/hooks to be stored there and loaded with `SYCOPHANT_MODULE` while not needing them to be in the cwd.
 
 ### Sycophant Options
 
