@@ -68,6 +68,29 @@ namespace sycophant {
 		return std::nullopt;
 	}
 
+
+	[[nodiscard]]
+	fs::path expanduser(std::string_view path) {
+		if (!path.empty() && path[0] == '~' && path[1] == '/') {
+			fs::path tmp{};
+			if (auto homedir = getenv("HOME")) {
+				tmp.concat(homedir->get());
+
+			} else if(auto username = getenv("USER")) {
+				tmp.concat("/home/");
+				tmp.concat(username->get());
+			} else {
+				tmp.concat("~");
+			}
+			tmp.concat(path.substr(1, path.length()));
+
+			return tmp;
+		}
+
+		return fs::path(path);
+	}
+
+
 }
 
 PYBIND11_EMBEDDED_MODULE(sycophant, m) {
@@ -147,6 +170,8 @@ extern "C" {
 			}
 		}
 
+		const fs::path user_modules{sycophant::expanduser("~/.config/sycophant"sv)};
+
 		// Build out memory map
 		sycophant::build_maps(sycophant::state.procmaps);
 
@@ -158,8 +183,14 @@ extern "C" {
 			true, argc, argv, true
 		};
 
-		// Load `inspect` so we can extract information from passed in functions
+		// Preload some modules
+		sycophant::state.imports.insert({"sys",     py::module::import("sys")    });
 		sycophant::state.imports.insert({"inspect", py::module::import("inspect")});
+
+		// Check to see if the user modules exist, and add them to the path if so
+		if (fs::exists(user_modules)) {
+			sycophant::state.imports["sys"].attr("path").attr("insert")(0, user_modules.c_str());
+		}
 
 		// Load up the hook module if specified, otherwise the default one
 		if (auto mod = sycophant::getenv("SYCOPHANT_MODULE")) {
@@ -167,6 +198,7 @@ extern "C" {
 		} else {
 			sycophant::state.imports.insert({"sycophant", py::module::import("sycophant_hooks")});
 		}
+
 
 
 
