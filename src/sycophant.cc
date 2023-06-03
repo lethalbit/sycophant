@@ -49,6 +49,7 @@ namespace sycophant {
 		std::vector<mapentry_t> procmaps{};
 
 		mmap_t self;
+		mmap_t trampoline{-1, 8192, prot_t::RWX, MAP_PRIVATE | MAP_ANONYMOUS};
 	} state{};
 
 	[[nodiscard]]
@@ -78,9 +79,6 @@ PYBIND11_EMBEDDED_MODULE(sycophant, m) {
 
 	m.def("add_hook", [](std::string_view name, py::function func) {
 
-		// hooks.push_back({
-		// 	name, func,  nullptr
-		// });
 	});
 
 	m.def("get_maps", [](){
@@ -160,6 +158,8 @@ extern "C" {
 		} else {
 			sycophant::state.imports.insert({"sycophant", py::module::import("sycophant_hooks")});
 		}
+
+
 
 		// If we have the original __libc_start_main then call it now that we're all setup
 		if (*sycophant::state.old_libc_start != nullptr) {
