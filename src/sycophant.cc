@@ -25,6 +25,7 @@
 #undef _GNU_SOURCE
 
 #include <pybind11/embed.h>
+#include <pybind11/stl.h>
 
 #include <config.hh>
 #include <types.hh>
@@ -72,11 +73,11 @@ PYBIND11_EMBEDDED_MODULE(sycophant, m) {
 	m.attr("__version__") = sycophant::config::version;
 
 	m.def("hook_addr", [](std::uintptr_t addr, py::function func) {
-		py::print(sycophant::param_count(func));
+
 	});
 
 	m.def("add_hook", [](std::string_view name, py::function func) {
-		py::print(sycophant::param_count(func));
+
 		// hooks.push_back({
 		// 	name, func,  nullptr
 		// });
