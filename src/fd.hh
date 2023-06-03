@@ -275,7 +275,27 @@ namespace sycophant {
 		}
 
 		[[nodiscard]]
+		sycophant::mmap_t map(const prot_t prot, const std::int32_t flags = MAP_SHARED) noexcept {
+			const auto len{length()};
+			if (len <= 0) {
+				return {};
+			}
+			return map(prot, static_cast<std::size_t>(len), flags);
+		}
+
+		[[nodiscard]]
 		sycophant::mmap_t map(const std::int32_t prot, const std::size_t len, const std::int32_t flags, void* addr = nullptr) noexcept {
+			if (!valid()) {
+				return {};
+			}
+			const std::int32_t file = _fd;
+			invalidate();
+			return {file, len, prot, flags, addr};
+		}
+
+
+		[[nodiscard]]
+		sycophant::mmap_t map(const prot_t prot, const std::size_t len, const std::int32_t flags, void* addr = nullptr) noexcept {
 			if (!valid()) {
 				return {};
 			}
