@@ -34,6 +34,7 @@
 
 #include <fd.hh>
 #include <mmap.hh>
+#include <elf.hh>
 
 namespace fs = std::filesystem;
 namespace py = pybind11;
