@@ -39,12 +39,13 @@ namespace fs = std::filesystem;
 namespace py = pybind11;
 
 namespace sycophant {
-
 	std::unique_ptr<libc_start_main_t> old_libc_start{nullptr};
 
 	std::map<std::string_view, py::module> imports{};
 	std::map<std::string_view, std::string_view> envmap{};
 	std::vector<mapentry_t> procmaps{};
+
+	mmap_t self;
 
 	[[nodiscard]]
 	std::size_t param_count(py::function& func) {
@@ -60,11 +61,6 @@ namespace sycophant {
 		}
 
 		return std::nullopt;
-	}
-
-	[[nodiscard]]
-	bool chperms(const page_prot_t perm, const std::size_t len, const std::uintptr_t addr) noexcept {
-		return ::mprotect(reinterpret_cast<void*>(addr), len, static_cast<std::int32_t>(perm)) == 0;
 	}
 
 }
@@ -143,6 +139,8 @@ extern "C" {
 		// Build out memory map
 		sycophant::build_maps(sycophant::procmaps);
 
+		// Map our current process into memory
+		sycophant::self = sycophant::fd_t("/proc/self/exe", O_RDONLY).map(sycophant::prot_t::R);
 		/* Now that pre-init is over we can spin up the interpreter */
 
 		py::scoped_interpreter guard{
@@ -158,11 +156,6 @@ extern "C" {
 		} else {
 			sycophant::imports.insert({"sycophant", py::module::import("sycophant_hooks")});
 		}
-
-
-
-
-
 
 		// If we have the original __libc_start_main then call it now that we're all setup
 		if (*sycophant::old_libc_start != nullptr) {
