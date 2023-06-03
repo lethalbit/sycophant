@@ -43,10 +43,13 @@ namespace py = pybind11;
 namespace sycophant {
 	struct sycophant_t final {
 		std::unique_ptr<libc_start_main_t> old_libc_start{nullptr};
+		std::unique_ptr<pthread_create_t> old_pthread_create{nullptr};
+		std::unique_ptr<pthread_join_t> old_pthread_join{nullptr};
 
 		std::map<std::string_view, py::module> imports{};
 		std::map<std::string_view, std::string_view> envmap{};
 		std::vector<mapentry_t> procmaps{};
+		std::vector<std::uint64_t> threads{};
 
 		mmap_t self;
 		mmap_t trampoline{-1, 8192, prot_t::RWX, MAP_PRIVATE | MAP_ANONYMOUS};
@@ -99,6 +102,11 @@ PYBIND11_EMBEDDED_MODULE(sycophant, m) {
 
 	auto proc = m.def_submodule("proc", "interact with the running process");
 
+	auto proc_threads = m.def_submodule("threads", "process thread information");
+
+	proc_threads.def("known", [](){
+		return sycophant::state.threads;
+	});
 
 	auto proc_maps = proc.def_submodule("maps", "process map information");
 
@@ -120,7 +128,6 @@ PYBIND11_EMBEDDED_MODULE(sycophant, m) {
 	proc_maps.def("has_addr", [](std::uintptr_t addr) {
 		return sycophant::addr_mapped(sycophant::state.procmaps, addr);
 	});
-
 
 	py::class_<sycophant::mapentry_t>(proc_maps, "mapentry")
 		.def_readonly("start",      &sycophant::mapentry_t::addr_s    )
@@ -148,6 +155,32 @@ PYBIND11_EMBEDDED_MODULE(sycophant, m) {
 }
 
 extern "C" {
+	// cheeky-hack to re-name the symbol because it's dragged in from one of our includes
+	std::int32_t sycophant_pthread_create(pthread_t* pid, const void* attr, void*(*start)(void*), void* args) asm ("pthread_create");
+	std::int32_t sycophant_pthread_join(pthread_t pid, void** retval) asm ("pthread_join");
+
+	[[gnu::used, gnu::visibility("default")]]
+	std::int32_t sycophant_pthread_create(pthread_t* pid, const void* attr, void*(*start)(void*), void* args) {
+		std::int32_t ret{};
+		if (*sycophant::state.old_pthread_create != nullptr) {
+			ret = (*sycophant::state.old_pthread_create)(pid, attr, start, args);
+			sycophant::state.threads.push_back(*pid);
+		}
+
+		return ret;
+	}
+
+	[[gnu::used, gnu::visibility("default")]]
+	std::int32_t sycophant_pthread_join(pthread_t pid, void** retval) {
+		std::int32_t ret{};
+		if (*sycophant::state.old_pthread_join != nullptr) {
+			ret = (*sycophant::state.old_pthread_join)(pid, retval);
+			sycophant::state.threads.erase(std::find(begin(sycophant::state.threads), end(sycophant::state.threads), pid));
+		}
+
+		return ret;
+	}
+
 	[[gnu::used, gnu::visibility("default")]]
 	std::int32_t __libc_start_main(
 		main_t main, std::int32_t argc, char** argv,
@@ -215,6 +248,14 @@ extern "C" {
 		/* yoink __libc_start_main for ourselves */
 		sycophant::state.old_libc_start = std::make_unique<libc_start_main_t>(
 			reinterpret_cast<libc_start_main_t>(dlsym(RTLD_NEXT, "__libc_start_main"))
+		);
+
+		sycophant::state.old_pthread_create = std::make_unique<pthread_create_t>(
+			reinterpret_cast<pthread_create_t>(dlsym(RTLD_NEXT, "pthread_create"))
+		);
+
+		sycophant::state.old_pthread_join = std::make_unique<pthread_join_t>(
+			reinterpret_cast<pthread_join_t>(dlsym(RTLD_NEXT, "pthread_join"))
 		);
 
 		if (*sycophant::state.old_libc_start == nullptr) {

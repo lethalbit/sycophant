@@ -15,7 +15,9 @@ using main_t = std::int32_t(*)(std::int32_t,  char**, char**);
 using init_t = main_t;
 using libc_start_main_t = std::int32_t(*)(main_t, std::int32_t, char**, void_t, void_t, void_t, void_t);
 using dlsym_t = void*(*)(void*, const char*);
-
+using pthread_t = unsigned long int;
+using pthread_create_t = std::int32_t(*)(pthread_t*, const void*, void*(*)(void*), void*);
+using pthread_join_t = std::int32_t(*)(pthread_t, void**);
 
 namespace sycophant {
 	struct mapentry_t final {
