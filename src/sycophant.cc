@@ -29,6 +29,9 @@
 #include <config.hh>
 #include <types.hh>
 
+#include <fd.hh>
+#include <mmap.hh>
+
 namespace fs = std::filesystem;
 namespace py = pybind11;
 
