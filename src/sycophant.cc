@@ -28,6 +28,7 @@
 
 #include <config.hh>
 #include <types.hh>
+#include <strutils.hh>
 #include <sysutils.hh>
 
 #include <fd.hh>
