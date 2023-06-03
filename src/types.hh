@@ -17,7 +17,6 @@ using libc_start_main_t = std::int32_t(*)(main_t, std::int32_t, char**, void_t, 
 using dlsym_t = void*(*)(void*, const char*);
 
 
-
 namespace sycophant {
 	struct mapentry_t final {
 		std::uintptr_t addr_s;

@@ -17,6 +17,7 @@
 #include <string_view>
 #include <variant>
 #include <map>
+#include <vector>
 
 #if !defined(_GNU_SOURCE)
 #define _GNU_SOURCE
@@ -40,24 +41,26 @@ namespace fs = std::filesystem;
 namespace py = pybind11;
 
 namespace sycophant {
-	std::unique_ptr<libc_start_main_t> old_libc_start{nullptr};
+	struct sycophant_t final {
+		std::unique_ptr<libc_start_main_t> old_libc_start{nullptr};
 
-	std::map<std::string_view, py::module> imports{};
-	std::map<std::string_view, std::string_view> envmap{};
-	std::vector<mapentry_t> procmaps{};
+		std::map<std::string_view, py::module> imports{};
+		std::map<std::string_view, std::string_view> envmap{};
+		std::vector<mapentry_t> procmaps{};
 
-	mmap_t self;
+		mmap_t self;
+	} state{};
 
 	[[nodiscard]]
 	std::size_t param_count(py::function& func) {
-		const auto res = imports["inspect"].attr("signature")(func);
+		const auto res = state.imports["inspect"].attr("signature")(func);
 		return py::len(res.attr("parameters"));
 	}
 
 
 	[[nodiscard]]
 	std::optional<std::reference_wrapper<std::string_view>> getenv(std::string_view name) {
-		if (const auto e = envmap.find(name);e != envmap.end()) {
+		if (const auto e = state.envmap.find(name);e != state.envmap.end()) {
 			return std::make_optional(std::ref(e->second));
 		}
 
@@ -81,11 +84,11 @@ PYBIND11_EMBEDDED_MODULE(sycophant, m) {
 	});
 
 	m.def("get_maps", [](){
-		return sycophant::procmaps;
+		return sycophant::state.procmaps;
 	});
 
 	m.def("refresh_maps", [](){
-		sycophant::build_maps(sycophant::procmaps);
+		sycophant::build_maps(sycophant::state.procmaps);
 	});
 
 
@@ -128,7 +131,7 @@ extern "C" {
 			const std::string_view e{*env};
 			const auto tok = e.find("=");
 
-			sycophant::envmap.insert({e.substr(0, tok), e.substr(tok + 1, e.length())});
+			sycophant::state.envmap.insert({e.substr(0, tok), e.substr(tok + 1, e.length())});
 
 			if (std::strncmp("LD_PRELOAD", *env, 10) == 0) {
 				std::memset(env, 0, std::strlen(*env));
@@ -138,10 +141,10 @@ extern "C" {
 		}
 
 		// Build out memory map
-		sycophant::build_maps(sycophant::procmaps);
+		sycophant::build_maps(sycophant::state.procmaps);
 
 		// Map our current process into memory
-		sycophant::self = sycophant::fd_t("/proc/self/exe", O_RDONLY).map(sycophant::prot_t::R);
+		sycophant::state.self = sycophant::fd_t("/proc/self/exe", O_RDONLY).map(sycophant::prot_t::R);
 		/* Now that pre-init is over we can spin up the interpreter */
 
 		py::scoped_interpreter guard{
@@ -149,18 +152,18 @@ extern "C" {
 		};
 
 		// Load `inspect` so we can extract information from passed in functions
-		sycophant::imports.insert({"inspect", py::module::import("inspect")});
+		sycophant::state.imports.insert({"inspect", py::module::import("inspect")});
 
 		// Load up the hook module if specified, otherwise the default one
 		if (auto mod = sycophant::getenv("SYCOPHANT_MODULE")) {
-			sycophant::imports.insert({"sycophant", py::module::import((mod->get()).data())});
+			sycophant::state.imports.insert({"sycophant", py::module::import((mod->get()).data())});
 		} else {
-			sycophant::imports.insert({"sycophant", py::module::import("sycophant_hooks")});
+			sycophant::state.imports.insert({"sycophant", py::module::import("sycophant_hooks")});
 		}
 
 		// If we have the original __libc_start_main then call it now that we're all setup
-		if (*sycophant::old_libc_start != nullptr) {
-			ret = (*sycophant::old_libc_start)(main, argc, argv, init, fini, rtld_fini, stack_end);
+		if (*sycophant::state.old_libc_start != nullptr) {
+			ret = (*sycophant::state.old_libc_start)(main, argc, argv, init, fini, rtld_fini, stack_end);
 		}
 
 		return ret;
@@ -169,11 +172,11 @@ extern "C" {
 	[[gnu::constructor]]
 	static void sycophant_ctor() {
 		/* yoink __libc_start_main for ourselves */
-		sycophant::old_libc_start = std::make_unique<libc_start_main_t>(
+		sycophant::state.old_libc_start = std::make_unique<libc_start_main_t>(
 			reinterpret_cast<libc_start_main_t>(dlsym(RTLD_NEXT, "__libc_start_main"))
 		);
 
-		if (*sycophant::old_libc_start == nullptr) {
+		if (*sycophant::state.old_libc_start == nullptr) {
 			fputs("[sycophant] unable to find __libc_start_main, bailing", stdout);
 			std::exit(1);
 		}
