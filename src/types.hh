@@ -16,20 +16,23 @@ using init_t = main_t;
 using libc_start_main_t = std::int32_t(*)(main_t, std::int32_t, char**, void_t, void_t, void_t, void_t);
 using dlsym_t = void*(*)(void*, const char*);
 
-struct mapentry_t final {
-	std::uintptr_t addr_s;
-	std::uintptr_t addr_e;
-	std::ptrdiff_t size;
-	std::uint8_t prot;
-	std::size_t offset;
-	/* There is a dev and inode here but we don't care about them */
-	std::string path;
 
-	bool is_virtual;
-	bool is_backed;
-};
 
 namespace sycophant {
+	struct mapentry_t final {
+		std::uintptr_t addr_s;
+		std::uintptr_t addr_e;
+		std::ptrdiff_t size;
+		std::uint8_t prot;
+		std::size_t offset;
+		/* There is a dev and inode here but we don't care about them */
+		std::string path;
+
+		bool is_virtual;
+		bool is_backed;
+	};
+
+
 	template<typename T, bool = std::is_unsigned_v<T>>
 	struct promoted_type;
 	template<typename T>
