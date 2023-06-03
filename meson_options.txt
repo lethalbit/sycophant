@@ -1,0 +1,6 @@
+option(
+	'bugreport_url',
+	type: 'string',
+	value: 'https://github.com/lethalbit/sycophant/issues',
+	description: 'URL for bug report submissions'
+)
