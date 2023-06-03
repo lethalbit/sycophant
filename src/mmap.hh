@@ -15,7 +15,15 @@
 #include <stdexcept>
 
 namespace sycophant {
-
+	enum struct prot_t : std::int32_t {
+		RWX = PROT_READ | PROT_WRITE | PROT_EXEC,
+		RW  = PROT_READ | PROT_WRITE,
+		RX  = PROT_READ | PROT_EXEC,
+		WX  = PROT_WRITE | PROT_EXEC,
+		R   = PROT_READ,
+		W   = PROT_WRITE,
+		X   = PROT_EXEC,
+	};
 	struct mmap_t final {
 	private:
 		std::size_t _len{0};
@@ -27,6 +35,14 @@ namespace sycophant {
 			const std::int32_t flags = MAP_SHARED, void* addr = nullptr
 		) noexcept : _len{len}, _addr{[&]() noexcept -> void* {
 			const auto ptr = ::mmap(addr, len, prot, flags, map._fd, 0);
+			return ptr == MAP_FAILED ? nullptr : ptr;
+		}()}, _fd{-1} { }
+
+		mmap_t(
+			const mmap_t& map, const std::size_t len, const prot_t prot,
+			const std::int32_t flags = MAP_SHARED, void* addr = nullptr
+		) noexcept : _len{len}, _addr{[&]() noexcept -> void* {
+			const auto ptr = ::mmap(addr, len, static_cast<std::int32_t>(prot), flags, map._fd, 0);
 			return ptr == MAP_FAILED ? nullptr : ptr;
 		}()}, _fd{-1} { }
 
@@ -57,6 +73,14 @@ namespace sycophant {
 			const std::int32_t flags = MAP_SHARED, void* addr = nullptr
 		) noexcept : _len{len}, _addr{[&]() noexcept -> void* {
 			const auto ptr = ::mmap(addr, len, prot, flags, fd, 0);
+			return ptr == MAP_FAILED ? nullptr : ptr;
+		}()}, _fd{fd} { }
+
+		mmap_t(
+			const std::int32_t fd, const std::size_t len, const prot_t prot,
+			const std::int32_t flags = MAP_SHARED, void* addr = nullptr
+		) noexcept : _len{len}, _addr{[&]() noexcept -> void* {
+			const auto ptr = ::mmap(addr, len, static_cast<std::int32_t>(prot), flags, fd, 0);
 			return ptr == MAP_FAILED ? nullptr : ptr;
 		}()}, _fd{fd} { }
 
@@ -92,8 +116,21 @@ namespace sycophant {
 		}
 
 		[[nodiscard]]
+		mmap_t dup(const prot_t prot, const std::size_t len, const std::int32_t flags, void* addr) const noexcept {
+			if (!valid()) {
+				return {};
+			}
+			return {*this, len, prot, flags, addr};
+		}
+
+		[[nodiscard]]
 		bool chperm(const std::int32_t prot) noexcept {
 			return ::mprotect(_addr, _len, prot) == 0;
+		}
+
+		[[nodiscard]]
+		bool chperm(const prot_t prot) noexcept {
+			return chperm(static_cast<std::int32_t>(prot));
 		}
 
 		template<typename T>
