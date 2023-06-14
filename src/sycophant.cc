@@ -143,8 +143,10 @@ PYBIND11_EMBEDDED_MODULE(sycophant, m) {
 
 	proc_maps.def("has_addr", [](std::uintptr_t addr) {
 		auto maps = sycophant::state.procmaps.read();
-
-		return sycophant::addr_mapped(*maps, addr);
+		if (auto _ = sycophant::get_map_entry(*maps, addr)) {
+			return true;
+		}
+		return false;
 	});
 
 	py::class_<sycophant::mapentry_t>(proc_maps, "mapentry")
