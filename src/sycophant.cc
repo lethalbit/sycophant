@@ -33,6 +33,7 @@
 #include <strutils.hh>
 #include <sysutils.hh>
 
+#include <rwlock.hh>
 #include <fd.hh>
 #include <mmap.hh>
 #include <elf.hh>
@@ -49,7 +50,7 @@ namespace sycophant {
 		std::map<std::string_view, py::module> imports{};
 		std::map<std::string_view, std::string_view> envmap{};
 		std::vector<mapentry_t> procmaps{};
-		std::vector<std::uint64_t> threads{};
+		rwlock_t<std::vector<std::uint64_t>> threads{};
 
 		mmap_t self;
 		mmap_t trampoline{-1, 8192, prot_t::RWX, MAP_PRIVATE | MAP_ANONYMOUS};
@@ -104,8 +105,8 @@ PYBIND11_EMBEDDED_MODULE(sycophant, m) {
 
 	auto proc_threads = m.def_submodule("threads", "process thread information");
 
-	proc_threads.def("known", [](){
-		return sycophant::state.threads;
+	proc_threads.def("known", []() {
+		return *(sycophant::state.threads.read());
 	});
 
 	auto proc_maps = proc.def_submodule("maps", "process map information");
@@ -164,7 +165,8 @@ extern "C" {
 		std::int32_t ret{};
 		if (*sycophant::state.old_pthread_create != nullptr) {
 			ret = (*sycophant::state.old_pthread_create)(pid, attr, start, args);
-			sycophant::state.threads.push_back(*pid);
+			auto thrds = sycophant::state.threads.write();
+			thrds->push_back(*pid);
 		}
 
 		return ret;
@@ -175,7 +177,8 @@ extern "C" {
 		std::int32_t ret{};
 		if (*sycophant::state.old_pthread_join != nullptr) {
 			ret = (*sycophant::state.old_pthread_join)(pid, retval);
-			sycophant::state.threads.erase(std::find(begin(sycophant::state.threads), end(sycophant::state.threads), pid));
+			auto thrds = sycophant::state.threads.write();
+			thrds->erase(std::find(std::begin(*thrds), std::end(*thrds), pid));
 		}
 
 		return ret;
