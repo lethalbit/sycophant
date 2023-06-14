@@ -13,7 +13,7 @@ namespace sycophant {
 	void build_maps(std::vector<mapentry_t>& map_entries) noexcept;
 
 	[[nodiscard]]
-	bool addr_mapped(std::vector<mapentry_t>& map_entries, const std::uintptr_t addr) noexcept;
+	bool addr_mapped(const std::vector<mapentry_t>& map_entries, const std::uintptr_t addr) noexcept;
 }
 
 #endif /* SYCOPHANT_SYSUTILS_HH */

@@ -88,7 +88,7 @@ namespace sycophant {
 
 
 	[[nodiscard]]
-	bool addr_mapped(std::vector<mapentry_t>& map_entries, const std::uintptr_t addr) noexcept {
+	bool addr_mapped(const std::vector<mapentry_t>& map_entries, const std::uintptr_t addr) noexcept {
 		for (auto& entry : map_entries) {
 			if (addr >= entry.addr_s || addr <= entry.addr_e) {
 				return true;
