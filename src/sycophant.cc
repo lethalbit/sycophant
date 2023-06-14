@@ -49,7 +49,7 @@ namespace sycophant {
 
 		std::map<std::string_view, py::module> imports{};
 		std::map<std::string_view, std::string_view> envmap{};
-		std::vector<mapentry_t> procmaps{};
+		rwlock_t<std::vector<mapentry_t>> procmaps{};
 		rwlock_t<std::vector<std::uint64_t>> threads{};
 
 		mmap_t self;
@@ -123,22 +123,28 @@ PYBIND11_EMBEDDED_MODULE(sycophant, m) {
 	auto proc_maps = proc.def_submodule("maps", "process map information");
 
 	proc_maps.def("all", []() {
-		return sycophant::state.procmaps;
+		auto maps = sycophant::state.procmaps.read();
+		return *maps;
 	});
 
 	proc_maps.def("get", [](std::size_t idx) -> std::optional<sycophant::mapentry_t> {
-		if (idx > sycophant::state.procmaps.size()) {
+		auto maps = sycophant::state.procmaps.read();
+		if (idx > maps->size()) {
 			return std::nullopt;
 		}
-		return std::make_optional(sycophant::state.procmaps[idx]);
+		return std::make_optional((*maps)[idx]);
 	});
 
 	proc_maps.def("refresh", []() {
-		sycophant::build_maps(sycophant::state.procmaps);
+		auto maps = sycophant::state.procmaps.write();
+
+		sycophant::build_maps(*maps);
 	});
 
 	proc_maps.def("has_addr", [](std::uintptr_t addr) {
-		return sycophant::addr_mapped(sycophant::state.procmaps, addr);
+		auto maps = sycophant::state.procmaps.read();
+
+		return sycophant::addr_mapped(*maps, addr);
 	});
 
 	py::class_<sycophant::mapentry_t>(proc_maps, "mapentry")
@@ -220,7 +226,7 @@ extern "C" {
 		const fs::path user_modules{sycophant::expanduser("~/.config/sycophant"sv)};
 
 		// Build out memory map
-		sycophant::build_maps(sycophant::state.procmaps);
+		sycophant::build_maps(*(sycophant::state.procmaps.write()));
 
 		// Map our current process into memory
 		sycophant::state.self = sycophant::fd_t("/proc/self/exe", O_RDONLY).map(sycophant::prot_t::R);
