@@ -174,6 +174,13 @@ PYBIND11_EMBEDDED_MODULE(sycophant, m) {
 		.def("can_execute", [](const sycophant::mapentry_t& entry) {
 			return (entry.flags & sycophant::mapentry_flags_t::EXEC) == sycophant::mapentry_flags_t::EXEC;
 		})
+		.def("is_rwx", [](const sycophant::mapentry_t& entry) {
+			return (
+				((entry.flags & sycophant::mapentry_flags_t::READ ) == sycophant::mapentry_flags_t::READ ) &&
+				((entry.flags & sycophant::mapentry_flags_t::WRITE) == sycophant::mapentry_flags_t::WRITE) &&
+				((entry.flags & sycophant::mapentry_flags_t::EXEC ) == sycophant::mapentry_flags_t::EXEC )
+			);
+		})
 		.def("is_backed", [](const sycophant::mapentry_t& entry) {
 			return (entry.flags & sycophant::mapentry_flags_t::BACKED) == sycophant::mapentry_flags_t::BACKED;
 		})
