@@ -14,14 +14,16 @@ __all__ = (
 )
 
 class mapentry_flags(IntFlag):
-		NONE   = 0b00000000,
-		READ   = 0b00000001,
-		WRITE  = 0b00000010,
-		EXEC   = 0b00000100,
-		PRIV   = 0b00001000,
-		SHARED = 0b00010000,
-		VIRT   = 0b00100000,
-		BACKED = 0b01000000,
+	NONE   = 0b00000000,
+	READ   = 0b00000001,
+	WRITE  = 0b00000010,
+	EXEC   = 0b00000100,
+	PRIV   = 0b00001000,
+	SHARED = 0b00010000,
+	VIRT   = 0b00100000,
+	BACKED = 0b01000000,
+
+	def __repr__(self) -> str: ...
 
 class mapentry:
 	start: int = ...
