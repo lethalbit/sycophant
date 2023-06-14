@@ -119,7 +119,7 @@ PYBIND11_EMBEDDED_MODULE(sycophant, m) {
 		return mem;
 	});
 
-	proc_mem.def("write", [](std::uintptr_t addr, std::vector<std::uint8_t> buff) {
+	proc_mem.def("write", [](std::uintptr_t addr, std::vector<std::uint8_t> buff) -> std::size_t {
 		auto maps = sycophant::state.procmaps.read();
 
 		if (auto map = sycophant::get_map_entry(*maps, addr)) {
@@ -128,7 +128,7 @@ PYBIND11_EMBEDDED_MODULE(sycophant, m) {
 			std::memcpy(reinterpret_cast<void*>(addr), buff.data(), to_write);
 			return to_write;
 		}
-		return 0UL;
+		return 0U;
 	});
 
 	auto proc_threads = proc.def_submodule("threads", "process thread information");
