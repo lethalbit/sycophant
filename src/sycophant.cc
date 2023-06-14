@@ -171,12 +171,13 @@ PYBIND11_EMBEDDED_MODULE(sycophant, m) {
 		})
 		.def("__repr__", [](const sycophant::mapentry_t& entry) {
 			const auto start{sycophant::fromint_t(entry.addr_s).to_hex()};
-			const auto end{sycophant::fromint_t(entry.addr_s).to_hex()};
+			const auto end{sycophant::fromint_t(entry.addr_e).to_hex()};
+			const auto size{sycophant::fromint_t(entry.size).to_dec()};
 			const auto path{[&](){
 				if ((entry.flags & sycophant::mapentry_flags_t::BACKED) == sycophant::mapentry_flags_t::BACKED) {
 					return "\"" + entry.path + "\"";
 				} else {
-					return std::string{};
+					return std::string{"ANONYMOUS"};
 				}
 			}()};
 
@@ -207,7 +208,7 @@ PYBIND11_EMBEDDED_MODULE(sycophant, m) {
 				return _prot;
 			}()};
 
-			return "<mapentry " + start + ":" + end + " " + prot + "  " + path + ">";
+			return "<mapentry " + start + ":" + end + " (" + size + " bytes) " + prot + "  " + path + ">";
 		});
 
 }
