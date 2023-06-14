@@ -223,7 +223,7 @@ namespace sycophant {
 
 
 		constexpr void process(const uarith_t num ,char* const buff) const noexcept {
-			proccess(num, buff, digits() - 1U, 0);
+			process(num, buff, digits() - 1U, 0);
 		}
 
 		template<typename T = int_t>
