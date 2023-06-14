@@ -166,6 +166,42 @@ PYBIND11_EMBEDDED_MODULE(sycophant, m) {
 		return false;
 	});
 
+	py::enum_<sycophant::mapentry_flags_t>(proc_maps, "mapentry_flags", py::arithmetic())
+		.value("NONE",   sycophant::mapentry_flags_t::NONE)
+		.value("READ",   sycophant::mapentry_flags_t::READ)
+		.value("WRITE",  sycophant::mapentry_flags_t::WRITE)
+		.value("EXEC",   sycophant::mapentry_flags_t::EXEC)
+		.value("PRIV",   sycophant::mapentry_flags_t::PRIV)
+		.value("SHARED", sycophant::mapentry_flags_t::SHARED)
+		.value("VIRT",   sycophant::mapentry_flags_t::VIRT)
+		.value("BACKED", sycophant::mapentry_flags_t::BACKED)
+		.def("__repr__", [](const sycophant::mapentry_flags_t& flags){
+			std::string _prot{};
+			if ((flags & sycophant::mapentry_flags_t::READ) == sycophant::mapentry_flags_t::READ) {
+				_prot.append("r");
+			} else {
+				_prot.append("-");
+			}
+			if ((flags & sycophant::mapentry_flags_t::WRITE) == sycophant::mapentry_flags_t::WRITE) {
+				_prot.append("w");
+			} else {
+				_prot.append("-");
+			}
+			if ((flags & sycophant::mapentry_flags_t::EXEC) == sycophant::mapentry_flags_t::EXEC) {
+				_prot.append("x");
+			} else {
+				_prot.append("-");
+			}
+			if ((flags & sycophant::mapentry_flags_t::SHARED) == sycophant::mapentry_flags_t::SHARED) {
+				_prot.append("s");
+			} else if ((flags & sycophant::mapentry_flags_t::PRIV) == sycophant::mapentry_flags_t::PRIV) {
+				_prot.append("p");
+			} else {
+				_prot.append("?");
+			}
+			return _prot;
+		});
+
 	py::class_<sycophant::mapentry_t>(proc_maps, "mapentry")
 		.def_readonly("start",      &sycophant::mapentry_t::addr_s    )
 		.def_readonly("end",        &sycophant::mapentry_t::addr_e    )
