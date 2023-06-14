@@ -55,19 +55,19 @@ namespace sycophant {
 			// Map protection
 			auto& prot = contents[1];
 			if (prot[0] == 'r') {
-				entry.prot |= PROT_READ;
+				entry.flags |= mapentry_flags_t::READ;
 			}
 			if (prot[1] == 'w')  {
-				entry.prot |= PROT_WRITE;
+				entry.flags |= mapentry_flags_t::WRITE;
 			}
 			if (prot[2] == 'x') {
-				entry.prot |= PROT_EXEC;
+				entry.flags |= mapentry_flags_t::EXEC;
 			}
 
 			if (prot[3] == 'p') {
-				entry.prot |= MAP_PRIVATE;
+				entry.flags |= mapentry_flags_t::PRIV;
 			} else if (prot[3] == 's') {
-				entry.prot |= MAP_SHARED;
+				entry.flags |= mapentry_flags_t::SHARED;
 			}
 
 			// offset
@@ -76,10 +76,10 @@ namespace sycophant {
 			// backing
 			if (contents.size() == 6) {
 				entry.path = std::string{contents[5]};
-				entry.is_virtual = (entry.path[0] == '[');
-				entry.is_backed = true;
-			} else {
-				entry.is_backed = false;
+				if (entry.path[0] == '[') {
+					entry.flags |= mapentry_flags_t::VIRT;
+				}
+				entry.flags |= mapentry_flags_t::BACKED;
 			}
 
 			map_entries.emplace_back(entry);

@@ -24,17 +24,32 @@ namespace sycophant {
 	struct enable_enum_bitmask_t {
 		static constexpr bool enabled = false;
 	};
+
+	enum struct mapentry_flags_t : std::uint8_t {
+		NONE   = 0b00000000U,
+		READ   = 0b00000001U,
+		WRITE  = 0b00000010U,
+		EXEC   = 0b00000100U,
+		PRIV   = 0b00001000U,
+		SHARED = 0b00010000U,
+		VIRT   = 0b00100000U,
+		BACKED = 0b01000000U,
+	};
+
+	template<>
+	struct enable_enum_bitmask_t<mapentry_flags_t> {
+		static constexpr bool enabled = true;
+	};
+
+
 	struct mapentry_t final {
-		std::uintptr_t addr_s;
-		std::uintptr_t addr_e;
-		std::uintptr_t size;
-		std::uint8_t prot;
-		std::size_t offset;
+		std::uintptr_t   addr_s;
+		std::uintptr_t   addr_e;
+		std::uintptr_t   size;
+		mapentry_flags_t flags;
+		std::size_t      offset;
 		/* There is a dev and inode here but we don't care about them */
 		std::string path;
-
-		bool is_virtual;
-		bool is_backed;
 	};
 
 

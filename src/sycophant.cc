@@ -151,23 +151,63 @@ PYBIND11_EMBEDDED_MODULE(sycophant, m) {
 		.def_readonly("start",      &sycophant::mapentry_t::addr_s    )
 		.def_readonly("end",        &sycophant::mapentry_t::addr_e    )
 		.def_readonly("size",       &sycophant::mapentry_t::size      )
-		.def_readonly("prot",       &sycophant::mapentry_t::prot      )
+		.def_readonly("flags",      &sycophant::mapentry_t::flags     )
 		.def_readonly("offset",     &sycophant::mapentry_t::offset    )
 		.def_readonly("path",       &sycophant::mapentry_t::path      )
-		.def_readonly("is_virtual", &sycophant::mapentry_t::is_virtual)
-		.def_readonly("is_backed",  &sycophant::mapentry_t::is_backed )
+		.def("can_read", [](const sycophant::mapentry_t& entry) {
+			return (entry.flags & sycophant::mapentry_flags_t::READ) == sycophant::mapentry_flags_t::READ;
+		})
+		.def("can_write", [](const sycophant::mapentry_t& entry) {
+			return (entry.flags & sycophant::mapentry_flags_t::WRITE) == sycophant::mapentry_flags_t::WRITE;
+		})
+		.def("can_execute", [](const sycophant::mapentry_t& entry) {
+			return (entry.flags & sycophant::mapentry_flags_t::EXEC) == sycophant::mapentry_flags_t::EXEC;
+		})
+		.def("is_backed", [](const sycophant::mapentry_t& entry) {
+			return (entry.flags & sycophant::mapentry_flags_t::BACKED) == sycophant::mapentry_flags_t::BACKED;
+		})
+		.def("is_virtual", [](const sycophant::mapentry_t& entry) {
+			return (entry.flags & sycophant::mapentry_flags_t::VIRT) == sycophant::mapentry_flags_t::VIRT;
+		})
 		.def("__repr__", [](const sycophant::mapentry_t& entry) {
 			const auto start{sycophant::fromint_t(entry.addr_s).to_hex()};
 			const auto end{sycophant::fromint_t(entry.addr_s).to_hex()};
 			const auto path{[&](){
-				if (entry.is_backed) {
+				if ((entry.flags & sycophant::mapentry_flags_t::BACKED) == sycophant::mapentry_flags_t::BACKED) {
 					return "\"" + entry.path + "\"";
 				} else {
 					return std::string{};
 				}
 			}()};
 
-			return "<mapentry (" + start + "-" + end + ") " + path + ">";
+			const auto prot{[&](){
+				std::string _prot{};
+				if ((entry.flags & sycophant::mapentry_flags_t::READ) == sycophant::mapentry_flags_t::READ) {
+					_prot.append("r");
+				} else {
+					_prot.append("-");
+				}
+				if ((entry.flags & sycophant::mapentry_flags_t::WRITE) == sycophant::mapentry_flags_t::WRITE) {
+					_prot.append("w");
+				} else {
+					_prot.append("-");
+				}
+				if ((entry.flags & sycophant::mapentry_flags_t::EXEC) == sycophant::mapentry_flags_t::EXEC) {
+					_prot.append("x");
+				} else {
+					_prot.append("-");
+				}
+				if ((entry.flags & sycophant::mapentry_flags_t::SHARED) == sycophant::mapentry_flags_t::SHARED) {
+					_prot.append("s");
+				} else if ((entry.flags & sycophant::mapentry_flags_t::PRIV) == sycophant::mapentry_flags_t::PRIV) {
+					_prot.append("p");
+				} else {
+					_prot.append("?");
+				}
+				return _prot;
+			}()};
+
+			return "<mapentry " + start + ":" + end + " " + prot + "  " + path + ">";
 		});
 
 }
