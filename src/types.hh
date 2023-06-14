@@ -20,6 +20,10 @@ using pthread_create_t = std::int32_t(*)(pthread_t*, const void*, void*(*)(void*
 using pthread_join_t = std::int32_t(*)(pthread_t, void**);
 
 namespace sycophant {
+	template<typename F>
+	struct enable_enum_bitmask_t {
+		static constexpr bool enabled = false;
+	};
 	struct mapentry_t final {
 		std::uintptr_t addr_s;
 		std::uintptr_t addr_e;
@@ -84,6 +88,176 @@ namespace sycophant {
 
 	template<typename T>
 	constexpr bool is_boolean_v = is_boolean<T>::value;
+}
+
+template<typename F>
+std::enable_if_t<sycophant::enable_enum_bitmask_t<F>::enabled, F>
+operator|(const F lh, const F rh) {
+	using utype = typename std::underlying_type_t<F>;
+	return static_cast<F>(static_cast<utype>(lh) | static_cast<utype>(rh));
+}
+
+template<typename F1, typename F2>
+std::enable_if_t<
+	sycophant::enable_enum_bitmask_t<F1>::enabled &&
+	std::is_integral_v<F2>, F1
+>
+operator|(const F1 lh, const F2 rh) {
+	using utype = typename std::underlying_type_t<F1>;
+	return static_cast<F1>(static_cast<utype>(lh) | rh);
+}
+
+template<typename F1, typename F2>
+std::enable_if_t<
+	sycophant::enable_enum_bitmask_t<F2>::enabled &&
+	std::is_integral_v<F1>, F2
+>
+operator|(const F1 lh, const F2 rh) {
+	using utype = typename std::underlying_type_t<F2>;
+	return static_cast<F2>(lh | static_cast<utype>(rh));
+}
+
+template<typename F>
+std::enable_if_t<sycophant::enable_enum_bitmask_t<F>::enabled, F>
+operator&(const F lh, const F rh) {
+	using utype = typename std::underlying_type_t<F>;
+	return static_cast<F>(static_cast<utype>(lh) & static_cast<utype>(rh));
+}
+
+template<typename F1, typename F2>
+std::enable_if_t<
+	sycophant::enable_enum_bitmask_t<F1>::enabled &&
+	std::is_integral_v<F2>, F1
+>
+operator&(const F1 lh, const F2 rh) {
+	using utype = typename std::underlying_type_t<F1>;
+	return static_cast<F1>(static_cast<utype>(lh) & rh);
+}
+
+template<typename F1, typename F2>
+std::enable_if_t<
+	sycophant::enable_enum_bitmask_t<F2>::enabled &&
+	std::is_integral_v<F1>, F2
+>
+operator&(const F1 lh, const F2 rh) {
+	using utype = typename std::underlying_type_t<F2>;
+	return static_cast<F2>(lh & static_cast<utype>(rh));
+}
+
+
+template<typename F>
+std::enable_if_t<sycophant::enable_enum_bitmask_t<F>::enabled, F>
+operator^(const F lh, const F rh) {
+	using utype = typename std::underlying_type_t<F>;
+	return static_cast<F>(static_cast<utype>(lh) ^ static_cast<utype>(rh));
+}
+
+template<typename F1, typename F2>
+std::enable_if_t<
+	sycophant::enable_enum_bitmask_t<F1>::enabled &&
+	std::is_integral_v<F2>, F1
+>
+operator^(const F1 lh, const F2 rh) {
+	using utype = typename std::underlying_type_t<F1>;
+	return static_cast<F1>(static_cast<utype>(lh) ^ rh);
+}
+
+template<typename F1, typename F2>
+std::enable_if_t<
+	sycophant::enable_enum_bitmask_t<F2>::enabled &&
+	std::is_integral_v<F1>, F2
+>
+operator^(const F1 lh, const F2 rh) {
+	using utype = typename std::underlying_type_t<F2>;
+	return static_cast<F2>(lh ^ static_cast<utype>(rh));
+}
+
+template<typename F>
+std::enable_if_t<sycophant::enable_enum_bitmask_t<F>::enabled, F>
+operator~(const F rh) {
+	using utype = typename std::underlying_type_t<F>;
+	return static_cast<F>(static_cast<utype>(~rh));
+}
+
+template<typename F>
+std::enable_if_t<sycophant::enable_enum_bitmask_t<F>::enabled, F&>
+operator|=(F& lh, const F rh) {
+	using utype = typename std::underlying_type_t<F>;
+	return lh = static_cast<F>(static_cast<utype>(lh) | static_cast<utype>(rh));
+}
+
+template<typename F1, typename F2>
+std::enable_if_t<
+	sycophant::enable_enum_bitmask_t<F1>::enabled &&
+	std::is_integral_v<F2>, F1&
+>
+operator|=(F1& lh, const F2 rh) {
+	using utype = typename std::underlying_type_t<F1>;
+	return lh = static_cast<F1>(static_cast<utype>(lh) | rh);
+}
+
+template<typename F1, typename F2>
+std::enable_if_t<
+	sycophant::enable_enum_bitmask_t<F2>::enabled &&
+	std::is_integral_v<F1>, F1&
+>
+operator|=(F1& lh, const F2 rh) {
+	using utype = typename std::underlying_type_t<F2>;
+	return lh = (lh | static_cast<utype>(rh));
+}
+
+template<typename F>
+std::enable_if_t<sycophant::enable_enum_bitmask_t<F>::enabled, F&>
+operator&=(F& lh, const F rh) {
+	using utype = typename std::underlying_type_t<F>;
+	return lh = static_cast<F>(static_cast<utype>(lh) & static_cast<utype>(rh));
+}
+
+template<typename F1, typename F2>
+std::enable_if_t<
+	sycophant::enable_enum_bitmask_t<F1>::enabled &&
+	std::is_integral_v<F2>, F1&
+>
+operator&=(F1& lh, const F2 rh) {
+	using utype = typename std::underlying_type_t<F1>;
+	return lh = static_cast<F1>(static_cast<utype>(lh) & rh);
+}
+
+template<typename F1, typename F2>
+std::enable_if_t<
+	sycophant::enable_enum_bitmask_t<F2>::enabled &&
+	std::is_integral_v<F1>, F1&
+>
+operator&=(F1& lh, const F2 rh) {
+	using utype = typename std::underlying_type_t<F2>;
+	return lh = (lh & static_cast<utype>(rh));
+}
+
+template<typename F>
+std::enable_if_t<sycophant::enable_enum_bitmask_t<F>::enabled, F&>
+operator^=(F& lh, const F rh) {
+	using utype = typename std::underlying_type_t<F>;
+	return lh = static_cast<F>(static_cast<utype>(lh) | static_cast<utype>(rh));
+}
+
+template<typename F1, typename F2>
+std::enable_if_t<
+	sycophant::enable_enum_bitmask_t<F1>::enabled &&
+	std::is_integral_v<F2>, F1&
+>
+operator^=(F1& lh, const F2 rh) {
+	using utype = typename std::underlying_type_t<F1>;
+	return lh = static_cast<F1>(static_cast<utype>(lh) ^ rh);
+}
+
+template<typename F1, typename F2>
+std::enable_if_t<
+	sycophant::enable_enum_bitmask_t<F2>::enabled &&
+	std::is_integral_v<F1>, F1&
+>
+operator^=(F1& lh, const F2 rh) {
+	using utype = typename std::underlying_type_t<F2>;
+	return lh = (lh ^ static_cast<utype>(rh));
 }
 
 #endif /* SYCOPHANT_TYPES_HH */
