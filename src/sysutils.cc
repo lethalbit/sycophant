@@ -46,8 +46,8 @@ namespace sycophant {
 			// Ingest the addr range
 			auto& addr_range = contents[0];
 			const auto end = addr_range.find('-', 0);
-			const auto addr_s = std::string_view{addr_range.substr(0, end)};
-			const auto addr_e = std::string_view{addr_range.substr(end + 1, addr_range.length())};
+			const auto addr_s = std::string{addr_range.substr(0, end).data(), end};
+			const auto addr_e = std::string{addr_range.substr(end + 1, addr_range.length()).data()};
 			entry.addr_s = toint_t<std::uintptr_t>(addr_s).from_hex();
 			entry.addr_e = toint_t<std::uintptr_t>(addr_e).from_hex();
 			entry.size   = entry.addr_e - entry.addr_s;
@@ -73,9 +73,8 @@ namespace sycophant {
 			// offset
 			entry.offset = toint_t<std::uint64_t>(contents[2]).from_hex();
 
-			// backing
-			if (contents.size() == 6) {
-				entry.path = std::string{contents[5]};
+			entry.path = std::string{contents[5]};
+			if (!entry.path.empty()) {
 				if (entry.path[0] == '[') {
 					entry.flags |= mapentry_flags_t::VIRT;
 				}
