@@ -107,7 +107,16 @@ PYBIND11_EMBEDDED_MODULE(sycophant, m) {
 	auto proc_mem = proc.def_submodule("mem", "interact with process memory");
 
 	proc_mem.def("read", [](std::uintptr_t addr, std::size_t len) {
+		auto maps = sycophant::state.procmaps.read();
+		std::vector<std::uint8_t> mem{};
 
+		if (auto map = sycophant::get_map_entry(*maps, addr)) {
+			const auto to_read{std::min(len, (map->get()).size)};
+			mem.resize(to_read);
+			std::memcpy(mem.data(), reinterpret_cast<const void*>(addr), to_read);
+		}
+
+		return mem;
 	});
 
 	proc_mem.def("write", [](std::uintptr_t addr, std::vector<std::uint8_t> buff) {
