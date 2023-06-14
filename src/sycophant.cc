@@ -103,6 +103,17 @@ PYBIND11_EMBEDDED_MODULE(sycophant, m) {
 
 	auto proc = m.def_submodule("proc", "interact with the running process");
 
+
+	auto proc_mem = proc.def_submodule("mem", "interact with process memory");
+
+	proc_mem.def("read", [](std::uintptr_t addr, std::size_t len) {
+
+	});
+
+	proc_mem.def("write", [](std::uintptr_t addr, std::vector<std::uint8_t> buff) {
+
+	});
+
 	auto proc_threads = proc.def_submodule("threads", "process thread information");
 
 	proc_threads.def("known", []() {
