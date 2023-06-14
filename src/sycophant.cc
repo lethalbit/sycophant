@@ -103,7 +103,7 @@ PYBIND11_EMBEDDED_MODULE(sycophant, m) {
 
 	auto proc = m.def_submodule("proc", "interact with the running process");
 
-	auto proc_threads = m.def_submodule("threads", "process thread information");
+	auto proc_threads = proc.def_submodule("threads", "process thread information");
 
 	proc_threads.def("known", []() {
 		return *(sycophant::state.threads.read());
